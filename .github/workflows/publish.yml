@@ -1,0 +1,39 @@
+name: Publish next deck to Instagram
+
+on:
+  schedule:
+    # 13:00 UTC daily = 9am US Eastern (8am during standard time).
+    # Cron here is always UTC, so this shifts by an hour across DST.
+    - cron: '0 13 * * *'
+  workflow_dispatch:        # lets you run it by hand from the Actions tab
+
+concurrency:
+  group: instagram-publish  # never let two runs post at once
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write       # needed to commit published.txt back
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Publish the next queued deck
+        env:
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+        run: bash publish-ci.sh
+
+      - name: Record what went out
+        run: |
+          if git diff --quiet published.txt; then
+            echo "nothing published this run"
+          else
+            git config user.name  "cardnews bot"
+            git config user.email "actions@github.com"
+            git add published.txt
+            git commit -m "published: $(tail -1 published.txt)"
+            git push
+          fi

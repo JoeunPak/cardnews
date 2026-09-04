@@ -22,8 +22,8 @@ jobs:
 
       - name: Publish the next queued deck
         env:
-          IG_USER_ID: ${{ secrets.IG_USER_ID }}
-          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}          # optional, defaults in publish-ci.sh
+          IG_ACCESS_TOKEN: ${{ secrets.IGTOKEN || secrets.IG_ACCESS_TOKEN }}
         run: bash publish-ci.sh
 
       - name: Record what went out

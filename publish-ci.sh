@@ -54,6 +54,26 @@ api_id() {
   printf '%s' "$id"
 }
 
+
+# Instagram needs a moment to fetch and process the images before a
+# container can be published. Publishing too early returns code 9007,
+# "Media ID is not available". Poll status_code until it is FINISHED.
+wait_ready() {
+  local id="$1" st i
+  for i in $(seq 1 30); do
+    st="$(curl -sS -G "$GRAPH/$id" \
+            --data-urlencode "fields=status_code" \
+            --data-urlencode "access_token=$IG_ACCESS_TOKEN" \
+          | sed -n 's/.*"status_code": *"\([^"]*\)".*/\1/p')"
+    case "$st" in
+      FINISHED) return 0 ;;
+      ERROR|EXPIRED) echo "container $id ended as $st" >&2; return 1 ;;
+    esac
+    sleep 3
+  done
+  echo "container $id still not ready after 90s (last status: ${st:-unknown})" >&2
+  return 1
+}
 # 1. one container per card
 CHILDREN=""
 for f in img/"$DECK"/card-*.jpg; do
@@ -73,6 +93,8 @@ resp="$(curl -sS -X POST "$GRAPH/$IG_USER_ID/media" \
           --data-urlencode "caption=$CAPTION" \
           -d "access_token=$IG_ACCESS_TOKEN")"
 CREATION_ID="$(api_id "$resp" "carousel container")"
+echo "waiting for the carousel to be ready…"
+wait_ready "$CREATION_ID"
 
 # 3. publish
 resp="$(curl -sS -X POST "$GRAPH/$IG_USER_ID/media_publish" \

@@ -11,7 +11,9 @@ set -eu
 GRAPH="https://graph.instagram.com/${GRAPH_VERSION:-v21.0}"
 RAW="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${GITHUB_REF_NAME:-main}"
 
-[ -n "${IG_USER_ID:-}" ]      || { echo "IG_USER_ID secret not set"; exit 1; }
+# The Instagram account id is not a secret — it is derivable from the public
+# profile. Defaulting it here means only the token has to be configured.
+IG_USER_ID="${IG_USER_ID:-28258391983852506}"
 [ -n "${IG_ACCESS_TOKEN:-}" ] || { echo "IG_ACCESS_TOKEN secret not set"; exit 1; }
 
 touch queue.txt published.txt

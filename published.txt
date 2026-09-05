@@ -1,2 +1,3 @@
 12-eyelids
 05-night-itch
+06-hand-eczema
